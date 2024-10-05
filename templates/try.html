@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken Feeder Monitor</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e9f5e9; /* Soft light green background */
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; /* Align items vertically */
+            height: 100vh;
+            background-image: url('https://images.unsplash.com/photo-1583501534424-550886b77a92?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTc0M3wwfDF8c2VhcmNofDF8fHRyYWNrJTIwYW5kJTIwY2hpY2tlbnxlbnwwfHx8fDE2Mzg2ODk5MzE&ixlib=rb-1.2.1&q=80&w=1080'); /* Background image */
+            background-size: cover; /* Cover the entire background */
+        }
+
+        #container {
+            max-width: 800px; /* Increased width */
+            margin: auto;
+            padding: 30px; /* Increased padding */
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 2px 4px 20px rgba(0, 0, 0, 0.2);
+            text-align: center; /* Centering text */
+        }
+
+        
+
+        h1 {
+            color: #4CAF50; /* Main text color */
+            font-size: 4em; /* Font size for the title */
+            text-shadow: 
+                1px 1px 0 #aaa, /* Light shadow */
+                2px 2px 0 #aaa, /* Slightly darker shadow */
+                3px 3px 0 #aaa, /* Darker shadow */
+                4px 4px 0 #aaa; /* Darkest shadow */
+            margin: 0; /* Remove default margin */
+            transform: translateZ(0); /* Trigger hardware acceleration */
+        }
+
+        .subheading {
+            font-size: 3em; /* Size for subheadings */
+            color: #4CAF50; /* Green color for subheadings */
+            margin: 20px 0; /* Spacing around subheadings */
+            border-bottom: 1px solid #ddd; /* Border below subheading */
+            padding-bottom: 10px; /* Padding below subheading */
+        }
+
+        p {
+            font-size: 2em; /* Larger font for better readability */
+            line-height: 1.8em; /* Increased line height */
+            margin: 20px 0; /* Increased spacing between paragraphs */
+        }
+
+        strong {
+            color: #4CAF50; /* Green color for strong text */
+        }
+
+        #foodStatus, #waterStatus {
+            font-weight: bold; /* Bold text for statuses */
+            transition: color 0.5s; /* Smooth color transition */
+        }
+
+        /* Changing color based on status */
+        #foodStatus {
+            color: #f44336; /* Red for food needed */
+        }
+
+        #waterStatus {
+            color: #f44336; /* Red for water needed */
+        }
+
+        #foodStatus.available {
+            color: #ff8c00; /* Orange for food available */
+        }
+
+        #waterStatus.available {
+            color: #ff8c00; /* Orange for water available */
+        }
+
+        /* Progress bar styling */
+        .progress {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 30px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+            line-height: 30px; /* Center the text vertically */
+            position: relative; /* Position relative for the inner text */
+            transition: width 0.5s; /* Smooth width transition */
+        }
+
+        /* Percentage display styling */
+        .percentage {
+            font-size: 2em; /* Same size as progress text */
+            font-weight: bold; /* Bold text */
+            margin-top: 5px; /* Space between progress bar and percentage */
+        }
+
+        /* Color for the percentage text */
+        #foodPercentage {
+            color: #4CAF50; /* Green for food percentage */
+        }
+
+        #waterPercentage {
+            color: #4CAF50; /* Green for water percentage */
+        }
+
+        /* Image styling */
+        #feederImage {
+            width: 90%; /* Increased image size */
+            margin-top: 30px; /* Increased space above the image */
+            border-radius: 10px; /* Rounded corners for the image */
+            transition: transform 0.3s, box-shadow 0.3s; /* Smooth transition */
+        }
+        
+        #feederImage:hover {
+            transform: scale(1.05); /* Slight zoom effect on hover */
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3); /* Enhanced shadow on hover */
+        }
+        
+    </style>
+    <script>
+        const apiKey = 'GB7NWOSKLMX2FIK4';
+        const channelId = '2473122';
+
+        function fetchData() {
+            const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?results=1`; // Fetch the latest feed
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const feeds = data.feeds;
+
+                    if (feeds.length > 0) {
+                        const latestFeed = feeds[0]; // Get the latest feed
+
+                        // Update food status
+                        const foodStatusElement = document.getElementById('foodStatus');
+                        const foodLevelElement = document.getElementById('foodLevel');
+                        const foodPercentageElement = document.getElementById('foodPercentage');
+
+                        // Update food level
+                        const foodLevel = latestFeed.field3 * 10; // Calculate food level (0-100)
+                        foodLevelElement.style.width = Math.min(foodLevel, 100) + '%'; // Set width up to 100%
+                        foodLevelElement.innerText = `${Math.round(foodLevel)}%`; // Show actual percentage
+                        foodLevelElement.style.backgroundColor = foodLevel > 50 ? '#4CAF50' : '#f44336'; // Change color based on level
+
+
+                        
+                        if (foodLevel <= 20) {
+                            foodStatusElement.innerText = 'Food Needed';
+                            foodStatusElement.className = 'needed'; // Optional: add a class for styling
+                        } else {
+                            foodStatusElement.innerText = 'Food Available';
+                            foodStatusElement.className = 'available'; // Optional: add a class for styling
+                        }
+
+                        
+                        // Update water status
+                        const waterStatusElement = document.getElementById('waterStatus');
+                        const waterLevelElement = document.getElementById('waterLevel');
+                        const waterPercentageElement = document.getElementById('waterPercentage');
+                        
+                        // Update water level
+                        const waterLevel = latestFeed.field4 * 10; // Calculate water level (0-100)
+                        waterLevelElement.style.width = Math.min(waterLevel, 100) + '%'; // Set width up to 100%
+                        waterLevelElement.innerText = `${Math.round(waterLevel)}%`; // Show actual percentage
+                        waterLevelElement.style.backgroundColor = waterLevel > 50 ? '#4CAF50' : '#f44336' ; // Change color based on level
+
+                        if (waterLevel <= 30) {
+                            waterStatusElement.innerText = 'Water Needed';
+                            waterStatusElement.className = 'needed'; // Optional: add a class for styling
+                        }
+                         else {
+                            waterStatusElement.innerText = 'Water Available';
+                            waterStatusElement.className = 'available'; // Optional: add a class for styling
+                        }
+
+
+                        // Update percentage display
+                        //waterPercentageElement.innerText = `${Math.round(waterLevel)}%`; // Display percentage outside progress bar
+                    } else {
+                        console.error('No feeds found');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        setInterval(fetchData, 3000);  // Fetch data every 3 seconds
+        window.onload = fetchData; // Fetch data on page load
+    </script>
+</head>
+<body>
+    <div id="container">
+        <h1>Chicken Feeder Monitor</h1>
+        <div class="subheading">Status Updates</div>
+        <p><strong>Food Status:</strong> <span id="foodStatus">Loading...</span></p>
+        <div class="progress">
+            <div class="progress-bar" id="foodLevel">Loading...</div>
+        </div>
+        <!--<span id="foodPercentage" class="percentage">Loading...</span>  Percentage for food level -->
+        <p><strong>Water Status:</strong> <span id="waterStatus">Loading...</span></p>
+        <div class="progress">
+            <div class="progress-bar" id="waterLevel">Loading...</div>
+        </div>
+        <!--<span id="waterPercentage" class="percentage">Loading...</span>  Percentage for water level -->
+        <img src="{{ url_for('static', filename='feed.jpeg') }}" alt="Chicken Feeder" id="feederImage">
+    </div>
+</body>
+</html>
